@@ -29,7 +29,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapPut("/v1/diff/{id}/left", async (int id, DiffingData data, HttpRequest request, DiffingDb db) =>
 {
-    if (data.Data == null)
+    if (data.Data == null || !Convert.TryFromBase64String(data.Data, new Span<byte>(new byte[data.Data.Length]), out _))
         return Results.BadRequest();
 
     var diffingItem = await db.DiffingItems.FindAsync(id);
@@ -63,7 +63,7 @@ app.MapGet("/v1/diff/{id}/left", async (int id, DiffingDb db) =>
 
 app.MapPut("/v1/diff/{id}/right", async (int id, DiffingData data, HttpRequest request, DiffingDb db) =>
 {
-    if (data.Data == null)
+    if (data.Data == null || !Convert.TryFromBase64String(data.Data, new Span<byte>(new byte[data.Data.Length]), out _))
         return Results.BadRequest();
 
     var diffingItem = await db.DiffingItems.FindAsync(id);

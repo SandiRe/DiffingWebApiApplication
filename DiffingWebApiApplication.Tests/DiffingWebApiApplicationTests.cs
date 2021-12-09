@@ -23,12 +23,32 @@ namespace DiffingWebApiApplication.Tests
         }
 
         [Test]
+        public async Task LeftValue_SendingNonBase64Data_ResponseStatusIs400BadRequest()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
+
+            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/left", new DiffingData("asd"));
+            Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.BadRequest);
+        }
+
+        [Test]
         public async Task RightValue_SendingNullData_ResponseStatusIs400BadRequest()
         {
             await using var application = new DiffingApplication();
             var client = application.CreateClient();
 
             var putResponse = await client.PutAsJsonAsync("/v1/diff/1/right", new DiffingData(null));
+            Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.BadRequest);
+        }
+
+        [Test]
+        public async Task RightValue_SendingNonBase64Data_ResponseStatusIs400BadRequest()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
+
+            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/right", new DiffingData("asd"));
             Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.BadRequest);
         }
 
