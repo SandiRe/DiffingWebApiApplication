@@ -1,7 +1,7 @@
 # DiffingWebApiApplication
 Diffing Web Api Application
 
-Prerequisites: 
+Prerequisites:
 -latest version of Visual Studio 2022
 -.NET 6.0 Framework
 
