@@ -1,17 +1,7 @@
-using DiffingWebApiApplication.Database;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
 using NUnit.Framework;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
-
 
 namespace DiffingWebApiApplication.Tests
 {
@@ -23,87 +13,140 @@ namespace DiffingWebApiApplication.Tests
         }
 
         [Test]
-        public void Test1()
-        {
-            Assert.Pass();
-        }
-
-
-
-        [Test]
-        public async Task LeftValue_SendingDataToIndex1_OperationSuccessfull()
+        public async Task LeftValue_SendingNullData_ResponseStatusIs400BadRequest()
         {
             await using var application = new DiffingApplication();
-
             var client = application.CreateClient();
-            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/left", new DiffingData("AAAAAA=="));
 
-            Assert.Equals(putResponse.StatusCode, HttpStatusCode.Created);
+            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/left", new DiffingData(null));
+            Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.BadRequest);
+        }
+
+        [Test]
+        public async Task RightValue_SendingNullData_ResponseStatusIs400BadRequest()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
+
+            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/right", new DiffingData(null));
+            Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.BadRequest);
+        }
+
+        [Test]
+        public async Task LeftValue_SendingData_OperationSuccessfull()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
+            
+            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/left", new DiffingData("AAAAAA=="));
+            Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.Created);
 
             var getResponse = await client.GetFromJsonAsync<DiffingData>("/v1/diff/1/left");
-
-            Assert.Equals(putResponse.StatusCode, HttpStatusCode.OK);
-            Assert.Equals(getResponse.Data, "AAAAAA==");
-            
-            //var difference = await client.GetFromJsonAsync<DiffingResultData>("/v1/diff/1", default, );
-
-            //var difference = await client.GetAsync("/v1/diff/1");
-
-            //Assert.Equals(difference.StatusCode, HttpStatusCode.NotFound);
+            Assert.AreEqual(getResponse.Data, "AAAAAA==");
         }
 
-
-        /*
-        [Fact]
-        public async Task DeleteTodos()
+        [Test]
+        public async Task RightValue_SendingData_OperationSuccessfull()
         {
-            await using var application = new TodoApplication();
-
+            await using var application = new DiffingApplication();
             var client = application.CreateClient();
-            var response = await client.PostAsJsonAsync("/todos", new Todo { Title = "I want to do this thing tomorrow" });
 
-            Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/right", new DiffingData("AQABAQ=="));
+            Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.Created);
 
-            var todos = await client.GetFromJsonAsync<List<Todo>>("/todos");
-
-            var todo = Assert.Single(todos);
-            Assert.Equal("I want to do this thing tomorrow", todo.Title);
-            Assert.False(todo.IsComplete);
-
-            response = await client.DeleteAsync($"/todos/{todo.Id}");
-
-            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-
-            response = await client.GetAsync($"/todos/{todo.Id}");
-
-            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            var getResponse = await client.GetFromJsonAsync<DiffingData>("/v1/diff/1/right");
+            Assert.AreEqual(getResponse.Data, "AQABAQ==");
         }
-        */
 
-
-
-
-
-
-
-    }
-
-
-    class DiffingApplication : WebApplicationFactory<Program>
-    {
-        protected override IHost CreateHost(IHostBuilder builder)
+        [Test]
+        public async Task CalculatedDifference_DifferenceIsCalculatedNoLeftValueNoRightValue_ResponseStatusIs404NotFound()
         {
-            var root = new InMemoryDatabaseRoot();
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
 
-            builder.ConfigureServices(services =>
-            {
-                services.RemoveAll(typeof(DbContextOptions<DiffingDb>));
+            var response = await client.GetAsync("/v1/diff/1");
+            Assert.AreEqual(response.StatusCode, HttpStatusCode.NotFound);
+        }
 
-                services.AddDbContext<DiffingDb>(options =>
-                    options.UseInMemoryDatabase("TestingDiffingItemDatabase", root));
-            });
+        [Test]
+        public async Task CalculatedDifference_DifferenceIsCalculatedNoLeftValue_ResponseStatusIs404NotFound()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
 
-            return base.CreateHost(builder);
+            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/right", new DiffingData("AQABAQ=="));
+            Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.Created);
+
+            var response = await client.GetAsync("/v1/diff/1");
+            Assert.AreEqual(response.StatusCode, HttpStatusCode.NotFound);
+        }
+
+        [Test]
+        public async Task CalculatedDifference_DifferenceIsCalculatedNoRightValue_ResponseStatusIs404NotFound()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
+
+            var putResponse = await client.PutAsJsonAsync("/v1/diff/1/left", new DiffingData("AAAAAA=="));
+            Assert.AreEqual(putResponse.StatusCode, HttpStatusCode.Created);
+
+            var response = await client.GetAsync("/v1/diff/1");
+            Assert.AreEqual(response.StatusCode, HttpStatusCode.NotFound);
+        }
+
+        [Test]
+        public async Task CalculatedDifference_DifferenceIsCalculatedLeftValueIsEqualRightValue_CorrectResponseIsReturned()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
+
+            var putLeftResponse = await client.PutAsJsonAsync("/v1/diff/1/left", new DiffingData("AAAAAA=="));
+            Assert.AreEqual(putLeftResponse.StatusCode, HttpStatusCode.Created);
+
+            var putRightResponse = await client.PutAsJsonAsync("/v1/diff/1/right", new DiffingData("AAAAAA=="));
+            Assert.AreEqual(putRightResponse.StatusCode, HttpStatusCode.Created);
+
+            var response = await client.GetFromJsonAsync<DiffingResultData>("/v1/diff/1");
+            Assert.AreEqual(response.DiffingResult, DiffingResultType.Equals);
+            Assert.IsNull(response.Differences);
+        }
+
+        [Test]
+        public async Task CalculatedDifference_DifferenceIsCalculatedLeftValueContentDoesNotMatchRightValueContent_CorrectResponseIsReturned()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
+
+            var putLeftResponse = await client.PutAsJsonAsync("/v1/diff/1/left", new DiffingData("AAAAAA=="));
+            Assert.AreEqual(putLeftResponse.StatusCode, HttpStatusCode.Created);
+
+            var putRightResponse = await client.PutAsJsonAsync("/v1/diff/1/right", new DiffingData("AQABAQ=="));
+            Assert.AreEqual(putRightResponse.StatusCode, HttpStatusCode.Created);
+
+            var response = await client.GetFromJsonAsync<DiffingResultData>("/v1/diff/1");
+            Assert.AreEqual(response.DiffingResult, DiffingResultType.ContentDoNotMatch);
+            Assert.AreEqual(response.Differences.Count, 2);
+            Assert.AreEqual(response.Differences[0].Offset, 0);
+            Assert.AreEqual(response.Differences[0].Length, 1);
+            Assert.AreEqual(response.Differences[1].Offset, 2);
+            Assert.AreEqual(response.Differences[1].Length, 2);
+        }
+
+        [Test]
+        public async Task CalculatedDifference_DifferenceIsCalculatedLeftValueSizeDoesNotMatchRightValueSize_CorrectResponseIsReturned()
+        {
+            await using var application = new DiffingApplication();
+            var client = application.CreateClient();
+
+            var putLeftResponse = await client.PutAsJsonAsync("/v1/diff/1/left", new DiffingData("AAA="));
+            Assert.AreEqual(putLeftResponse.StatusCode, HttpStatusCode.Created);
+
+            var putRightResponse = await client.PutAsJsonAsync("/v1/diff/1/right", new DiffingData("AQABAQ=="));
+            Assert.AreEqual(putRightResponse.StatusCode, HttpStatusCode.Created);
+
+            var response = await client.GetFromJsonAsync<DiffingResultData>("/v1/diff/1");
+            Assert.AreEqual(response.DiffingResult, DiffingResultType.SizeDoNotMatch);
+            Assert.IsNull(response.Differences);
         }
     }
 }

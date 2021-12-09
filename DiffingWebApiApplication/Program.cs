@@ -1,5 +1,6 @@
 using DiffingWebApiApplication;
 using DiffingWebApiApplication.Database;
+using Microsoft.AspNetCore.Http.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System.Net.Mime;
 using System.Text.Json;
@@ -26,8 +27,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapPut("/v1/diff/{id}/left", async (int id, DiffingData data, DiffingDb db) =>
+app.MapPut("/v1/diff/{id}/left", async (int id, DiffingData data, HttpRequest request, DiffingDb db) =>
 {
+    if (data.Data == null)
+        return Results.BadRequest();
+
     var diffingItem = await db.DiffingItems.FindAsync(id);
 
     if (diffingItem is null)
@@ -37,7 +41,9 @@ app.MapPut("/v1/diff/{id}/left", async (int id, DiffingData data, DiffingDb db) 
     
     await db.SaveChangesAsync();
 
-    return Results.Created($"{app.Urls.First()}/v1/diff/{id}/left", null);
+    var url = UriHelper.GetEncodedUrl(request);
+
+    return Results.Created($"{url}/v1/diff/{id}/left", null);
 });
 
 app.MapGet("/v1/diff/{id}/left", async (int id, DiffingDb db) =>
@@ -55,18 +61,23 @@ app.MapGet("/v1/diff/{id}/left", async (int id, DiffingDb db) =>
     return Results.Json(new DiffingData (diffingItem.LeftValue), jsonSerializerOptionsIgnoreNullObjects, MediaTypeNames.Application.Json, StatusCodes.Status200OK);
 });
 
-app.MapPut("/v1/diff/{id}/right", async (int id, DiffingData data, DiffingDb db) =>
+app.MapPut("/v1/diff/{id}/right", async (int id, DiffingData data, HttpRequest request, DiffingDb db) =>
 {
+    if (data.Data == null)
+        return Results.BadRequest();
+
     var diffingItem = await db.DiffingItems.FindAsync(id);
 
     if (diffingItem is null)
-        db.Add(new DiffingItem(id, data.Data, null));
+        db.Add(new DiffingItem(id, null, data.Data));
     else
         diffingItem.RightValue = data.Data;
 
     await db.SaveChangesAsync();
 
-    return Results.Created($"{app.Urls.First()}/v1/diff/{id}/right", null);
+    var url = UriHelper.GetEncodedUrl(request);
+
+    return Results.Created($"{url}/v1/diff/{id}/right", null);
 });
 
 app.MapGet("/v1/diff/{id}/right", async (int id, DiffingDb db) =>
@@ -105,3 +116,7 @@ app.MapGet("/v1/diff/{id}", async (int id, DiffingDb db) =>
 });
 
 app.Run();
+
+public partial class Program { }
+
+

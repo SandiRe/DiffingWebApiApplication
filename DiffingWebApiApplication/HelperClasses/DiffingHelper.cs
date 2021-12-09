@@ -15,7 +15,7 @@
             byte[] rightBytes = Convert.FromBase64String(right);
 
             if (leftBytes.Length != rightBytes.Length)
-                diffingResult.DiffingResult = DiffingResultIype.SizeDoNotMatch;
+                diffingResult.DiffingResult = DiffingResultType.SizeDoNotMatch;
             else
             {
                 bool diffParsing = false;
@@ -44,9 +44,9 @@
                 }
 
                 if (diffingResult.Differences == null)
-                    diffingResult.DiffingResult = DiffingResultIype.Equals;
+                    diffingResult.DiffingResult = DiffingResultType.Equals;
                 else
-                    diffingResult.DiffingResult = DiffingResultIype.ContentDoNotMatch;
+                    diffingResult.DiffingResult = DiffingResultType.ContentDoNotMatch;
             }
 
             return diffingResult;

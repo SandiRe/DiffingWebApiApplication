@@ -1,5 +1,6 @@
 using DiffingWebApiApplication;
 using DiffingWebApiApplication.Database;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -34,7 +35,6 @@ namespace DiffingWebApi.Tests
 
             var getResponse = await client.GetFromJsonAsync<DiffingData>("/v1/diff/1/left");
 
-            Assert.Equal(HttpStatusCode.OK, putResponse.StatusCode);
             Assert.Equal("AAAAAA==", getResponse.Data);
 
             //var difference = await client.GetFromJsonAsync<DiffingResultData>("/v1/diff/1", default, );
@@ -50,6 +50,12 @@ namespace DiffingWebApi.Tests
         protected override IHost CreateHost(IHostBuilder builder)
         {
             var root = new InMemoryDatabaseRoot();
+
+            //builder.ConfigureWebHostDefaults(webBuilder =>
+            //{
+            //    webBuilder.UseStartup<Program>();
+            //    webBuilder.UseUrls("http://localhost:5152");
+            //});
 
             builder.ConfigureServices(services =>
             {

@@ -3,7 +3,7 @@
 namespace DiffingWebApiApplication
 {
     [JsonConverter(typeof(JsonStringEnumConverter))]
-    public enum DiffingResultIype
+    public enum DiffingResultType
     {
         Equals,
         SizeDoNotMatch,
